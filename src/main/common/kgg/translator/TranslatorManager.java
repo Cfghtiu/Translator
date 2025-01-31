@@ -1,5 +1,6 @@
 package kgg.translator;
 
+import kgg.translator.event.SetTranslatorEvent;
 import kgg.translator.translator.Translator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +23,7 @@ public class TranslatorManager {
     public static boolean setTranslator(Translator translator) {
         LOGGER.info("Set current translator to {}", translator);
         if (current != translator) {
+            SetTranslatorEvent.invoke(translator);
             if (current != null && Language.translatorMap.containsKey(current.getName()) && Language.translatorMap.containsKey(translator.getName())) {
                 String leftFrom = Language.getLeftLang(current.getName(), from);
                 String leftTo = Language.getLeftLang(current.getName(), to);
