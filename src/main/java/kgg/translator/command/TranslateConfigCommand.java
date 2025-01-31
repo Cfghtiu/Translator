@@ -1,16 +1,11 @@
 package kgg.translator.command;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import kgg.translator.Translate;
 import kgg.translator.TranslatorConfig;
 import kgg.translator.TranslatorManager;
-import kgg.translator.handler.TranslateHelper;
 import kgg.translator.screen.ConfigJsonScreen;
 import kgg.translator.translator.Translator;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -95,7 +90,7 @@ public class TranslateConfigCommand {
         root.then(ClientCommandManager.literal("clearcache")
                 .executes(context -> {
                     Translate.clearCache();
-                    TranslateHelper.clearCache();
+                    kgg.translator.handler.TranslateHelper.clearCache();
                     context.getSource().sendFeedback(Text.literal("OK"));
                     return 0;
                 }));
