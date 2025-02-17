@@ -88,7 +88,7 @@ public abstract class InGameHudForScoreboardMixin {
         // Rendering logic
         Text finalText = text;
         int finalMaxWidth = maxWidth;
-        context.draw(vertexConsumerProvider ->{
+        context.draw(() ->{
             int entryCount = sidebarEntries.size();
             Objects.requireNonNull(getTextRenderer());
             int totalHeight = entryCount * this.getTextRenderer().fontHeight;

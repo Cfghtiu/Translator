@@ -8,8 +8,6 @@ import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.gui.tooltip.TooltipPositioner;
 import net.minecraft.item.tooltip.TooltipData;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2ic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -28,14 +26,13 @@ import java.util.Optional;
  */
 @Mixin(DrawContext.class)
 public abstract class DrawContextMixinTooltip {
-
-    @Shadow protected abstract void drawTooltip(TextRenderer textRenderer, List<TooltipComponent> components, int x, int y, TooltipPositioner positioner, @Nullable Identifier texture);
+    @Shadow protected abstract void drawTooltip(TextRenderer textRenderer, List<TooltipComponent> components, int x, int y, TooltipPositioner positioner);
 
     @Unique
     @Deprecated public abstract void draw(Runnable drawCallback);
 
-    @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;IILnet/minecraft/util/Identifier;)V", at = @At("HEAD"))
-    public void drawTooltip(TextRenderer textRenderer, List<Text> text, Optional<TooltipData> data, int x, int y, Identifier texture, CallbackInfo ci) {
+    @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;II)V", at = @At("HEAD"))
+    public void drawTooltip(TextRenderer textRenderer, List<Text> text, Optional<TooltipData> data, int x, int y, CallbackInfo ci) {
         if (Options.autoTooltip.getValue()) {
             TipHandler.handle((DrawContext) (Object) this, text, x, y, 0.4f);
         }
@@ -61,8 +58,8 @@ public abstract class DrawContextMixinTooltip {
     @Unique
     private static TooltipPositioner positioner;
 
-    @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;IILnet/minecraft/client/gui/tooltip/TooltipPositioner;Lnet/minecraft/util/Identifier;)V", at = @At("HEAD"))
-    public void drawTooltip(TextRenderer textRenderer, List<TooltipComponent> components, int x, int y, TooltipPositioner positioner, @Nullable Identifier texture, CallbackInfo ci) {
+    @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;IILnet/minecraft/client/gui/tooltip/TooltipPositioner;)V", at = @At("HEAD"))
+    public void drawTooltip(TextRenderer textRenderer, List<TooltipComponent> components, int x, int y, TooltipPositioner positioner, CallbackInfo ci) {
         DrawContextMixinTooltip.textRenderer = textRenderer;
         DrawContextMixinTooltip.positioner = positioner;
     }
@@ -70,7 +67,7 @@ public abstract class DrawContextMixinTooltip {
     /**
      * 重定向getPosition可以方便的获得屏幕大小
      */
-    @Redirect(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;IILnet/minecraft/client/gui/tooltip/TooltipPositioner;Lnet/minecraft/util/Identifier;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/tooltip/TooltipPositioner;getPosition(IIIIII)Lorg/joml/Vector2ic;"))
+    @Redirect(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;IILnet/minecraft/client/gui/tooltip/TooltipPositioner;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/tooltip/TooltipPositioner;getPosition(IIIIII)Lorg/joml/Vector2ic;"))
     public Vector2ic getPosition(TooltipPositioner instance, int screenWidth, int screenHeight, int x, int y, int width, int height) {
         // 原位置
         Vector2ic position = instance.getPosition(screenWidth, screenHeight, x, y, width, height);
@@ -89,7 +86,7 @@ public abstract class DrawContextMixinTooltip {
                     if (k > translatedRectWidth) {
                         translatedRectWidth = k;
                     }
-                    translatedRectHeight += tooltipComponent.getHeight(textRenderer);
+                    translatedRectHeight += tooltipComponent.getHeight();
                 }
 
                 /*显示工具栏逻辑如下
@@ -101,19 +98,18 @@ public abstract class DrawContextMixinTooltip {
                 if (position.x() + width + translatedRectWidth + 12 > screenWidth) {
                     if (y + 12 + height + 3 > screenHeight) {
                         // -12是与原文x对称
-                        drawTooltip(textRenderer, components, position.x() - 12, y + height + 1 + 12, positioner, null);
+                        drawTooltip(textRenderer, components, position.x() - 12, y + height + 1 + 12, positioner);
                     } else {
-                        drawTooltip(textRenderer, components, position.x() - 12, y + height + 1 + 12, positioner,null);
+                        drawTooltip(textRenderer, components, position.x() - 12, y + height + 1 + 12, positioner);
                     }
                     return position;
                 } else {
                     // 返回加上翻译文本的总体尺寸
                     Vector2ic newPosition = instance.getPosition(screenWidth, screenHeight, x, y, width + translatedRectWidth + 1, Math.max(translatedRectHeight, height));
                     // 渲染
-                    drawTooltip(textRenderer, components, newPosition.x() + width + 1, y, positioner,null);
+                    drawTooltip(textRenderer, components, newPosition.x() + width + 1, y, positioner);
                     return newPosition;
                 }
-
             } else {
                 return position;
             }
