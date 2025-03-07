@@ -9,6 +9,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -42,12 +43,13 @@ public class ConfigJsonScreen extends Screen {
         configFieldWidget.setPosition(this.width / 2 - 100, this.height / 4 + 30);
         addDrawableChild(configFieldWidget);
         addDrawableChild(ButtonWidget.builder(Text.translatable("translator.configscreen.save"), e -> save()).dimensions(this.width / 2 - 100, this.height / 4 + 96, 200, 20).build());
-        if (FabricLoader.getInstance().isModLoaded("cloth-config")) {
-            addDrawableChild(ButtonWidget.builder(Text.translatable("translator.configscreen.modmenu"), e -> {
-                needLoad = true;
-                client.setScreen(ModMenuApiImpl.createScreen(this));
-            }).dimensions(this.width / 2 - 100, this.height / 4 + 118, 200, 20).build());
-        }
+        ButtonWidget btn = addDrawableChild(ButtonWidget.builder(Text.translatable("translator.configscreen.modmenu"), e -> {
+            needLoad = true;
+            client.setScreen(ModMenuApiImpl.createScreen(this));
+        })
+            .tooltip(Tooltip.of(Text.translatable("translator.configscreen.tip")))
+            .dimensions(this.width / 2 - 100, this.height / 4 + 118, 200, 20).build());
+        btn.active = FabricLoader.getInstance().isModLoaded("cloth-config");
     }
 
     private void save() {

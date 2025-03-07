@@ -20,6 +20,7 @@
     "translator.configscreen.edit": "Edit",
     "translator.configscreen.save": "Save",
     "translator.configscreen.modmenu": "More convenient editing",
+    "translator.configscreen.tip": "need mod \"cloth-config\"",
     "translator.modmenu.title": "Translation Configuration",
     "translator.modmenu.current": "Current Translator",
     "translator.modmenu.from": "Source Language",

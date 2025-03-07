@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.command.CommandSource;
 import net.minecraft.text.Text;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -28,14 +29,16 @@ public class LangArgumentType implements ArgumentType<String> {
 
     public static String getLanguage(CommandContext<FabricClientCommandSource> context, String name) {
         String string = context.getArgument(name, String.class);
-//        EasyProperties properties = TranslatorManager.getCurrent().getLanguageProperties();
-        for (Map.Entry<String, String> entry : Language.translatorMap.get(TranslatorManager.getCurrent().getName()).entrySet()) {
+
+        Map<String, String> map = new HashMap<>(Language.defaultMap);
+        Map<String, String> translatorMap = Language.translatorMap.get(TranslatorManager.getCurrent().getName());
+        if (translatorMap != null) {
+            map.putAll(translatorMap);
+        }
+        for (Map.Entry<String, String> entry : map.entrySet()) {
             String s = Text.translatable("language." + entry.getKey()).getString();
             if (s.equals(string)) return entry.getValue();
         }
-//        if (!properties.containsKey(string)) return string;
-//        String lang = properties.getProperty(string);
-//        if (lang != null) return lang;
         return string;
     }
 

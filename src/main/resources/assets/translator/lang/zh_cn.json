@@ -20,6 +20,7 @@
   "translator.configscreen.edit": "编辑",
   "translator.configscreen.save": "保存",
   "translator.configscreen.modmenu": "更方便的编辑",
+  "translator.configscreen.tip": "需要 \"cloth-config\" 模组",
   "translator.modmenu.title": "翻译配置",
   "translator.modmenu.current": "当前翻译器",
   "translator.modmenu.from": "源语言",

@@ -36,9 +36,10 @@ public class TranslateConfigCommand {
                                     TranslatorConfig.writeFile();
                                     return queryLanguage(context);
                                 }))));
-        // /trans-config translator <translator> ...
+        // /trans-config translator
         LiteralArgumentBuilder<FabricClientCommandSource> selectNode = ClientCommandManager.literal("translator")
                 .executes(TranslateConfigCommand::queryTranslator);
+        // /trans-config translator <translator> ...
         TranslatorManager.getTranslators().forEach(translator -> {
             LiteralArgumentBuilder<FabricClientCommandSource> subNode = ClientCommandManager.literal(translator.getName())
                     .executes(context -> {
@@ -55,36 +56,7 @@ public class TranslateConfigCommand {
         });
         root.then(selectNode);
 
-        // /trans-config save
-/*        root.then(ClientCommandManager.literal("save")
-                .executes(context -> {
-                    if (TranslatorConfig.writeFile()) {
-                        context.getSource().sendFeedback(Text.literal("OK"));
-                    } else {
-                        context.getSource().sendError(Text.literal("Failed to save config"));
-                    }
-                    return 0;
-                }));*/
-
-        // /trans-config load <string>
-/*        root.then(ClientCommandManager.literal("load")
-                .then(ClientCommandManager.argument("json", StringArgumentType.greedyString())
-                        .executes(context -> {
-                            String str = StringArgumentType.getString(context, "json");
-                            try {
-                                JsonObject object = JsonParser.parseString(str).getAsJsonObject();
-                                boolean read = TranslatorConfig.readConfig(object);
-                                if (read) {
-                                    context.getSource().sendFeedback(Text.literal("OK"));
-                                } else {
-                                    context.getSource().sendError(Text.literal("Failed to load config"));
-                                }
-                                return 0;
-                            } catch (JsonSyntaxException e) {
-                                context.getSource().sendError(Text.literal("Invalid json"));
-                                return 0;
-                            }
-                        })));*/
+        // /trans-config translator <llm-translator>
 
         // /trans-config clearcache
         root.then(ClientCommandManager.literal("clearcache")
@@ -97,12 +69,6 @@ public class TranslateConfigCommand {
 
         // /trans-config config
         root.then(ClientCommandManager.literal("config").executes(context -> {
-//            JsonObject object = new JsonObject();
-//            TranslatorConfig.writeConfig(object);
-//            String txt = object.toString();
-//            MutableText message = Text.literal(txt);
-//            message.setStyle(Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, txt)).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("点击复制"))));
-//            context.getSource().sendFeedback(message);
             MinecraftClient.getInstance().send(() -> MinecraftClient.getInstance().setScreen(new ConfigJsonScreen()));
             return 0;
         }));
