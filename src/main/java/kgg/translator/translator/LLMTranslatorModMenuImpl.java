@@ -7,8 +7,10 @@ import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
 import net.minecraft.text.Text;
 
 public class LLMTranslatorModMenuImpl extends LLMTranslatorImpl implements ModMenuConfigurable {
-    public LLMTranslatorModMenuImpl(String prompt, String name, String url) {
-        super(prompt, name, url);
+
+
+    public LLMTranslatorModMenuImpl(String name, String url) {
+        super(name, url);
     }
 
     @Override

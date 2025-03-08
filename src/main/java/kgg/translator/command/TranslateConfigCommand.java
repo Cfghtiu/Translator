@@ -1,12 +1,14 @@
 package kgg.translator.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import kgg.translator.Translate;
 import kgg.translator.TranslatorConfig;
 import kgg.translator.TranslatorManager;
 import kgg.translator.screen.ConfigJsonScreen;
+import kgg.translator.translator.LLMTranslator;
 import kgg.translator.translator.Translator;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -39,25 +41,47 @@ public class TranslateConfigCommand {
         // /trans-config translator
         LiteralArgumentBuilder<FabricClientCommandSource> selectNode = ClientCommandManager.literal("translator")
                 .executes(TranslateConfigCommand::queryTranslator);
+
+        // /trans-config translator <llm-translator> [apikey] [model]
+        selectNode.then(ClientCommandManager.argument("translator", LLMTranslatorArgumentType.translator())
+            .then(ClientCommandManager.literal("apikey")
+                .then(ClientCommandManager.argument("apikey", StringArgumentType.string())
+                    .executes(context -> {
+                        LLMTranslator translator = LLMTranslatorArgumentType.getTranslator(context, "translator");
+                        String apikey = StringArgumentType.getString(context, "apikey");
+                        translator.setConfig(apikey, null);
+                        context.getSource().sendFeedback(Text.of("ok"));
+                        return 0;
+                    })))
+            .then(ClientCommandManager.literal("model")
+                .then(ClientCommandManager.argument("model", StringArgumentType.string())
+                    .executes(context -> {
+                        LLMTranslator translator = LLMTranslatorArgumentType.getTranslator(context, "translator");
+                        String model = StringArgumentType.getString(context, "model");
+                        translator.setConfig(null, model);
+                        context.getSource().sendFeedback(Text.of("ok"));
+                        return 0;
+                    }))
+                .executes(context -> {
+                    LLMTranslator translator = LLMTranslatorArgumentType.getTranslator(context, "translator");
+                    context.getSource().sendFeedback(Text.of(translator.getModel()));
+                    return 0;
+                }))
+            .executes(context -> selectTranslator(context, LLMTranslatorArgumentType.getTranslator(context, "translator")))
+        );
+
         // /trans-config translator <translator> ...
         TranslatorManager.getTranslators().forEach(translator -> {
+            if (translator instanceof LLMTranslator) {
+                return;
+            }
             LiteralArgumentBuilder<FabricClientCommandSource> subNode = ClientCommandManager.literal(translator.getName())
-                    .executes(context -> {
-                        boolean b = TranslatorManager.setTranslator(translator);
-                        TranslatorConfig.writeFile();
-                        int a = queryTranslator(context);
-                        if (!b) {
-                            context.getSource().sendError(Text.literal("未能自动切换语言，需要手动修改语言"));
-                        }
-                        return a;
-                    });
+                    .executes(context -> selectTranslator(context, translator));
             translator.register(subNode);
             selectNode.then(subNode);
         });
+
         root.then(selectNode);
-
-        // /trans-config translator <llm-translator>
-
         // /trans-config clearcache
         root.then(ClientCommandManager.literal("clearcache")
                 .executes(context -> {
@@ -74,6 +98,16 @@ public class TranslateConfigCommand {
         }));
 
         dispatcher.register(root);
+    }
+
+    private static int selectTranslator(CommandContext<FabricClientCommandSource> context, Translator translator) {
+        boolean b = TranslatorManager.setTranslator(translator);
+        TranslatorConfig.writeFile();
+        int a = queryTranslator(context);
+        if (!b) {
+            context.getSource().sendError(Text.literal("未能自动切换语言，需要手动修改语言"));
+        }
+        return a;
     }
 
     private static int queryLanguage(CommandContext<FabricClientCommandSource> context) {

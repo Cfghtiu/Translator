@@ -1,0 +1,2 @@
+KIMI,https://api.moonshot.cn/v1,moonshot-v1-8k
+质谱,https://open.bigmodel.cn/api/paas/v4,GLM-4-Flash

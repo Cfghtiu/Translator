@@ -2,9 +2,9 @@ package kgg.translator.translator;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import kgg.translator.translator.Translator;
 import kgg.translator.util.RequestUtil;
 import net.minecraft.client.MinecraftClient;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 
 import java.io.IOException;
@@ -14,28 +14,24 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public abstract class LLMTranslator extends Translator {
+    public static String prompt;
+
     protected final String name;
     protected final String url;
 
     protected String apiKey = "";
     protected String model = "";
-    private String prompt;
 
-    public LLMTranslator(String prompt, String name, String url) {
-        this.prompt = prompt;
+    public String getModel() {
+        return model;
+    }
+
+    public LLMTranslator(String name, String url) {
         this.name = name;
         this.url = url;
-    }
-
-
-    public String getPrompt() {
-        return prompt;
-    }
-
-    public void setPrompt(String prompt) {
-        this.prompt = prompt;
     }
 
     @Override
@@ -124,8 +120,15 @@ public abstract class LLMTranslator extends Translator {
     }
 
     public void setConfig(String apiKey, String model) {
-        this.apiKey = apiKey;
-        this.model = model;
+        if (!StringUtils.isBlank(apiKey)) {
+            this.apiKey = apiKey;
+        }
+        if (!StringUtils.isBlank(model)) {
+            this.model = model;
+        }
+        if (!StringUtils.isBlank(apiKey) && !StringUtils.isBlank(model)) {
+            setConfigured();
+        }
     }
 
     @Override
