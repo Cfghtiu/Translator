@@ -31,7 +31,7 @@ public class LangArgumentType implements ArgumentType<String> {
         String string = context.getArgument(name, String.class);
 
         Map<String, String> map = new HashMap<>(Language.defaultMap);
-        Map<String, String> translatorMap = Language.translatorMap.get(TranslatorManager.getCurrent().getName());
+        Map<String, String> translatorMap = Language.translatorMap.get(TranslatorManager.getCurrent().getLanguageType());
         if (translatorMap != null) {
             map.putAll(translatorMap);
         }
@@ -45,7 +45,7 @@ public class LangArgumentType implements ArgumentType<String> {
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
         if (context.getSource() instanceof CommandSource) {
-            Set<String> support = Language.getTranslatorSupport(TranslatorManager.getCurrent().getName());
+            Set<String> support = Language.getTranslatorSupport(TranslatorManager.getCurrent().getLanguageType());
             return CommandSource.suggestMatching(support.stream().map(c -> '"' + Text.translatable("language."+c).getString() + '"').toList(), builder);
         }
         return Suggestions.empty();

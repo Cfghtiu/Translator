@@ -9,6 +9,9 @@
   "commands.transconfig.querytranslator": "当前使用的翻译器为%s",
   "commands.transconfig.querytranslator.configed": "%s已配置",
   "commands.transconfig.querytranslator.unconfiged": "%s未配置",
+  "commands.transconfig.querytranslator.unsupported": "未能自动切换语言，需要手动修改语言",
+  "commands.transconfig.addmodel.add": "添加完成，需要继续设置apiKey",
+  "commands.transconfig.addmodel.remove.fail": "没有找到此模型",
 
   "translator.option.distance": "翻译距离",
   "translator.option.distance.desc": "如果实体或告示牌超出翻译距离，则不翻译",

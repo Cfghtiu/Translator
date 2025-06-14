@@ -2,6 +2,7 @@ package kgg.translator.translator;
 
 import com.google.gson.JsonObject;
 import kgg.translator.TranslatorConfig;
+import kgg.translator.TranslatorManager;
 import kgg.translator.command.CommandConfigurable;
 import kgg.translator.exception.TranslateException;
 import kgg.translator.ocrtrans.ResRegion;
@@ -29,17 +30,28 @@ public abstract class Translator implements CommandConfigurable {
 
     public abstract String getName();
 
+    public String getLanguageType() {
+        return getName();
+    }
+
     public boolean isConfigured() {
         return configured;
     }
 
     public void setConfigured() {
-        TranslatorConfig.writeFile();
         setConfigured(true);
     }
 
     public void setConfigured(boolean configured) {
         this.configured = configured;
+        if (configured) {
+            if (!TranslatorManager.getCurrent().isConfigured()) {
+                TranslatorManager.setTranslator(this);
+            }
+            if (!TranslatorConfig.isInit()) {
+                TranslatorConfig.writeFile();
+            }
+        }
     }
 
     public abstract void read(JsonObject object);

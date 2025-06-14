@@ -57,6 +57,18 @@ public class Language {
         return null;
     }
 
+    public static String getRightLang(String translator, String leftLang) {
+        Map<String, String> m;
+        Map<String, String> m2 = translatorMap.get(translator);
+        if (m2 == null) {
+            m = defaultMap;
+        } else {
+            m = new HashMap<>(defaultMap);
+            m.putAll(m2);
+        }
+        return m.getOrDefault(leftLang, null);
+    }
+
     public static void setPredicate(String lang, Predicate<String> predicate) {
         predicateMap.put(lang, predicate);
     }

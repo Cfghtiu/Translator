@@ -9,6 +9,9 @@
     "commands.transconfig.querytranslator": "The current translator in use is %s",
     "commands.transconfig.querytranslator.configed": "%s is configured",
     "commands.transconfig.querytranslator.unconfiged": "%s is not configured",
+    "commands.transconfig.querytranslator.unsupported": "Failed to automatically switch languages, need manually modified",
+    "commands.transconfig.addmodel.add": "Addition completed, need to continue setting apiKey",
+    "commands.transconfig.addmodel.remove.fail": "No such model",
 
     "translator.option.distance": "Translation Distance",
     "translator.option.distance.desc": "Entities or signs beyond the translation distance will not be translated",

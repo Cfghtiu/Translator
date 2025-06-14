@@ -2,22 +2,41 @@ package kgg.translator;
 
 import com.google.gson.*;
 import kgg.translator.option.OptionRegistry;
+import kgg.translator.translator.LLMTranslator;
 import kgg.translator.util.ConfigUtil;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 public class TranslatorConfig {
     private static final File file = new File("config", "translator.json");
     private static final File optionFile = new File("config", "translator_option.json");
     private static final Logger LOGGER = LogManager.getLogger(TranslatorConfig.class);
+    private static boolean init = false;
 
+    public static String read(String name) throws IOException {
+        File file = new File("config/translator/" + name);
+        if (!file.exists()) {
+            IOUtils.copy(Objects.requireNonNull(TranslatorMod.class.getClassLoader().getResourceAsStream(name)), new FileOutputStream(file));
+        }
+        return IOUtils.toString(new FileInputStream(file), StandardCharsets.UTF_8);
+    }
+
+    public static void write(String name, String content) throws IOException {
+        File file = new File("config/translator/" + name);
+        IOUtils.write(content, new FileOutputStream(file), StandardCharsets.UTF_8);
+    }
 
     public static boolean readFile() {
         JsonObject config;
         JsonObject options;
         try {
+            Language.load(TranslatorConfig.read("language.json"));
+
             config = ConfigUtil.load(file);
             boolean b = readConfig(config);
             assert b;
@@ -51,7 +70,7 @@ public class TranslatorConfig {
     public static boolean writeConfig(JsonObject config) {
         config.addProperty("from", TranslatorManager.getFrom());
         config.addProperty("to", TranslatorManager.getTo());
-
+        LLMManager.writeConfig(config);
         config.addProperty("current", TranslatorManager.getCurrent().getName());
         TranslatorManager.getTranslators().forEach(translator -> {
             if (translator.isConfigured()) {
@@ -64,10 +83,11 @@ public class TranslatorConfig {
     }
 
     public static boolean readConfig(JsonObject config) {
+        init = true;
         try {
             TranslatorManager.setFrom(config.get("from").getAsString());
             TranslatorManager.setTo(config.get("to").getAsString());
-
+            LLMManager.readConfig(config);
             String currentTranslator = config.get("current").getAsString();
             TranslatorManager.getTranslators().forEach(translator -> {
                 JsonElement element = config.get(translator.getName());
@@ -89,6 +109,8 @@ public class TranslatorConfig {
         } catch (Exception e) {
             LOGGER.error("Failed to read config", e);
             return false;
+        } finally {
+            init = false;
         }
     }
 
@@ -112,5 +134,9 @@ public class TranslatorConfig {
             config.add(key, OptionRegistry.createJsonElement(value));
         });
         return true;
+    }
+
+    public static boolean isInit() {
+        return init;
     }
 }

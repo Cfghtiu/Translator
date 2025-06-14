@@ -13,4 +13,8 @@ public class TranslateException extends IOException {
     public TranslateException(Throwable cause) {
         super(cause);
     }
+
+    public TranslateException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
