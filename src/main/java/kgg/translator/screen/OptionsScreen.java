@@ -1,5 +1,6 @@
 package kgg.translator.screen;
 
+import kgg.translator.TranslatorConfig;
 import kgg.translator.event.OptionsScreenAddBodyEvent;
 import kgg.translator.option.Options;
 import net.minecraft.client.MinecraftClient;
@@ -22,5 +23,11 @@ public class OptionsScreen extends GameOptionsScreen {
                 Options.autoPlayerName
         );
         OptionsScreenAddBodyEvent.EVENT.invoker().add(this.body);
+    }
+
+    @Override
+    public void close() {
+        TranslatorConfig.writeFile();
+        super.close();
     }
 }

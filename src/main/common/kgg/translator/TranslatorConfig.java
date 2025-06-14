@@ -18,12 +18,16 @@ public class TranslatorConfig {
     private static final Logger LOGGER = LogManager.getLogger(TranslatorConfig.class);
     private static boolean init = false;
 
-    public static String read(String name) throws IOException {
-        File file = new File("config/translator/" + name);
-        if (!file.exists()) {
-            IOUtils.copy(Objects.requireNonNull(TranslatorMod.class.getClassLoader().getResourceAsStream(name)), new FileOutputStream(file));
+    public static String read(String name) {
+        try {
+            File file = new File("config/translator/" + name);
+            if (!file.exists()) {
+                IOUtils.copy(Objects.requireNonNull(TranslatorMod.class.getClassLoader().getResourceAsStream(name)), new FileOutputStream(file));
+            }
+            return IOUtils.toString(new FileInputStream(file), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return IOUtils.toString(new FileInputStream(file), StandardCharsets.UTF_8);
     }
 
     public static void write(String name, String content) throws IOException {
@@ -115,18 +119,17 @@ public class TranslatorConfig {
     }
 
     private static boolean readOptions(JsonObject config) {
-        try {
-            OptionRegistry.options.forEach((key, value) -> {
-                if (config.has(key)) {
+        OptionRegistry.options.forEach((key, value) -> {
+            if (config.has(key)) {
+                try {
                     OptionRegistry.readJsonElement(value, config.get(key));
+                } catch (Exception e) {
+                    LOGGER.error("{} failed to read option", key, e);
                 }
-            });
-            LOGGER.info("Options read successfully");
-            return true;
-        } catch (Exception e) {
-            LOGGER.error("Failed to read options", e);
-            return false;
-        }
+            }
+        });
+        LOGGER.info("Options read successfully");
+        return true;
     }
 
     private static boolean writeOptions(JsonObject config) {

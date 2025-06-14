@@ -24,7 +24,7 @@ public class TranslatorManager {
         LOGGER.info("Set current translator to {}", translator);
         if (current != translator) {
             SetTranslatorEvent.invoke(translator);
-            if (current != null && Language.translatorMap.containsKey(current.getLanguageType()) && Language.translatorMap.containsKey(translator.getName())) {
+            if (current != null && Language.translatorMap.containsKey(current.getLanguageType()) && Language.translatorMap.containsKey(translator.getLanguageType())) {
                 String leftFrom = Language.getLeftLang(current.getLanguageType(), from);
                 String leftTo = Language.getLeftLang(current.getLanguageType(), to);
                 if (leftFrom != null && leftTo != null) {

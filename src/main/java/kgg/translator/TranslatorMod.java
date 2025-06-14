@@ -3,6 +3,7 @@ package kgg.translator;
 import kgg.translator.command.TranslateCommand;
 import kgg.translator.command.TranslateConfigCommand;
 import kgg.translator.handler.KeyBindingHandler;
+import kgg.translator.option.Options;
 import kgg.translator.translator.*;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -28,6 +29,8 @@ public class TranslatorMod implements ClientModInitializer {
             TranslateConfigCommand.register(dispatcher);
         });
 
+        Options.init();
+
         // 保存配置
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             TranslatorConfig.readFile();
@@ -41,6 +44,5 @@ public class TranslatorMod implements ClientModInitializer {
         // 普通翻译器
         TranslatorManager.addTranslator(new BaiduTranslatorModMenuImpl());
         TranslatorManager.addTranslator(new YouDaoTranslatorModMenuImpl());
-        LLMManager.init();
     }
 }

@@ -5,58 +5,56 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import kgg.translator.translator.LLMTranslator;
 import kgg.translator.translator.LLMTranslatorImpl;
-import kgg.translator.translator.LLMTranslatorModMenuImpl;
-import net.fabricmc.loader.api.FabricLoader;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class LLMManager {
     private static String prompt;
-    public record Model(String name, String url, String defaultModel) { }
     private static final Gson gson = new Gson();
     private static final Map<String, Model> models = new HashMap<>();
-
-    public static Map<String, Model> getModels() {
-        return models;
-    }
-
-    public static String getPrompt() {
-        return prompt;
-    }
 
     public static void writeConfig(JsonObject object) {
         object.add("models", gson.toJsonTree(models, new TypeToken<Map<String, Model>>(){}.getType()));
     }
 
     public static void readConfig(JsonObject object) {
+        models.clear();
+        TranslatorManager.getTranslators().removeIf(translator -> translator instanceof LLMTranslator);
         Map<String, Model> load = gson.fromJson(object.getAsJsonObject("models"), new TypeToken<Map<String, Model>>(){}.getType());
         if (load == null) {
             addBuiltInModels();
         } else {
-            models.putAll(load);
+            load.forEach((name, model) -> addModel(model));
         }
-        models.forEach((name, model) -> addLLMTranslator(model));
+        prompt = TranslatorConfig.read("prompt.txt");
+    }
+
+    public static String getPrompt() {
+        return prompt;
+    }
+
+    public static Map<String, Model> getModels() {
+        return models;
     }
 
     private static void addBuiltInModels() {
-        models.put("KIMI", new Model("KIMI", "https://api.moonshot.cn/v1", "moonshot-v1-8k"));
-        models.put("质谱", new Model("质谱", "https://open.bigmodel.cn/api/paas/v4", "GLM-4-Flash"));
-        models.put("ChatGPT", new Model("ChatGPT", "https://api.openai.com/v1/completions", "gpt-3.5-turbo"));
+        for (Model model : geBuiltInModels()) {
+            addModel(model);
+        }
     }
 
-    public static void init() {
-        try {
-            prompt = TranslatorConfig.read("prompt.txt");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public static Model[] geBuiltInModels() {
+        return new Model[] {
+            new Model("KIMI", "https://api.moonshot.cn/v1", "moonshot-v1-8k", ""),
+            new Model("质谱", "https://open.bigmodel.cn/api/paas/v4", "GLM-4-Flash", ""),
+            new Model("ChatGPT", "https://api.openai.com/v1/completions", "gpt-3.5-turbo", "")
+        };
     }
 
     public static void addModel(Model model) {
         // 去除结尾的/
-        Model newModel = new Model(model.name, model.url.endsWith("/") ? model.url.substring(0, model.url.length() - 1) : model.url, model.defaultModel);
+        Model newModel = new Model(model.name, model.url.endsWith("/") ? model.url.substring(0, model.url.length() - 1) : model.url, model.model, model.apiKey);
 
         Model old = models.put(model.name, newModel);  // 替换
         if (old != null) {
@@ -76,8 +74,21 @@ public class LLMManager {
 
     private static void addLLMTranslator(Model model) {
         LLMTranslator translator;
-        translator = new LLMTranslatorModMenuImpl(model.name, model.url);
-        translator.setConfig("", model.defaultModel());
+        translator = new LLMTranslatorImpl(model);
         TranslatorManager.addTranslator(translator);
+    }
+
+    public static class Model {
+        public String name;
+        public String url;
+        public String model;
+        public String apiKey;
+
+        public Model(String name, String url, String model, String apiKey) {
+            this.name = name == null ? "" : name;
+            this.url = url == null ? "" : url;
+            this.model = model == null ? "" : model;
+            this.apiKey = apiKey == null ? "" : apiKey;
+        }
     }
 }

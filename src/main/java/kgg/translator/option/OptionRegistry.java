@@ -16,8 +16,13 @@ public class OptionRegistry {
 
     public static <T> void readJsonElement(SimpleOption<T> option, JsonElement element) {
         Type type = new TypeToken<T>(){}.getType();
-        T value = gson.fromJson(element, type);
-        option.setValue(value);
+        Object value = gson.fromJson(element, type);
+
+        if (value instanceof Double && option.getValue() instanceof Integer) {  // 不然会报错，无奈之举
+            value = ((Double) value).intValue();
+        }
+
+        option.setValue((T) value);
     }
 
     public static JsonElement createJsonElement(SimpleOption<?> option) {

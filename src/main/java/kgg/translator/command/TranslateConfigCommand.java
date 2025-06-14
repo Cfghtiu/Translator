@@ -41,12 +41,12 @@ public class TranslateConfigCommand {
         // /trans-config translator
         LiteralArgumentBuilder<FabricClientCommandSource> selectNode = ClientCommandManager.literal("translator")
             .executes(TranslateConfigCommand::queryTranslator);
-        root.then(selectNode);
         selectNode.then(ClientCommandManager.argument("translator", TranslatorArgumentType.translator())
             .executes(context -> {
                 Translator translator = TranslatorArgumentType.getTranslator(context, "translator");
                 return selectTranslator(context, translator);
             }));
+        root.then(selectNode);
 
         // /trans-config clearcache
         root.then(ClientCommandManager.literal("clearcache")
@@ -69,6 +69,14 @@ public class TranslateConfigCommand {
                     client.send(() -> client.setScreen(new ConfigJsonScreen()));
                     return 0;
                 })));
+
+        // /trans-config reload
+        root.then(ClientCommandManager.literal("reload")
+            .executes(context -> {
+                TranslatorConfig.readFile();
+                context.getSource().sendFeedback(Text.literal("OK"));
+                return 0;
+            }));
 
         dispatcher.register(root);
     }
@@ -94,11 +102,11 @@ public class TranslateConfigCommand {
         Text message = Text.translatable("commands.transconfig.querytranslator", translator);
         context.getSource().sendFeedback(message);
         if (translator.isConfigured()) {
-                message = Text.translatable("commands.transconfig.querytranslator.configed", translator).withColor(0x00ff00);
-            } else {
-                message = Text.translatable("commands.transconfig.querytranslator.unconfiged", translator).withColor(0xff0000);
-            }
-            context.getSource().sendFeedback(message);
+            message = Text.translatable("commands.transconfig.querytranslator.configed", translator).withColor(0x00ff00);
+        } else {
+            message = Text.translatable("commands.transconfig.querytranslator.unconfiged", translator).withColor(0xff0000);
+        }
+        context.getSource().sendFeedback(message);
         return 0;
     }
 }

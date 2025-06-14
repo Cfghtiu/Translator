@@ -44,14 +44,11 @@ public abstract class Translator implements CommandConfigurable {
 
     public void setConfigured(boolean configured) {
         this.configured = configured;
-        if (configured) {
-            if (!TranslatorManager.getCurrent().isConfigured()) {
-                TranslatorManager.setTranslator(this);
-            }
-            if (!TranslatorConfig.isInit()) {
-                TranslatorConfig.writeFile();
-            }
-        }
+//        if (configured) {
+//            if (!TranslatorConfig.isInit()) {
+//                TranslatorConfig.writeFile();
+//            }
+//        }
     }
 
     public abstract void read(JsonObject object);

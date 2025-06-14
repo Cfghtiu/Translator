@@ -8,6 +8,8 @@ import net.minecraft.util.math.Vec3d;
 import static kgg.translator.option.OptionRegistry.*;
 
 public class Options {
+    public static void init() {}
+
     // 聊天栏
     public static final SimpleOption<Boolean> chatTip = registerBool("chat_tip", false);
     public static final SimpleOption<Boolean> autoChat = registerBool("auto_chat", false);

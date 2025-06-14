@@ -8,8 +8,8 @@ import kgg.translator.LLMManager;
 import kgg.translator.exception.TranslateException;
 import kgg.translator.util.RequestUtil;
 import net.minecraft.client.MinecraftClient;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
+import org.apache.logging.log4j.util.Strings;
 
 import java.io.IOException;
 import java.net.URI;
@@ -20,19 +20,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class LLMTranslator extends Translator {
-    protected final String name;
-    protected final String url;
+    private final LLMManager.Model model;
 
-    protected String apiKey = "";
-    protected String model = "";
-
-    public String getModel() {
-        return model;
+    public LLMTranslator(LLMManager.Model model) {
+        this.model = model;
     }
 
-    public LLMTranslator(String name, String url) {
-        this.name = name;
-        this.url = url;
+    @Override
+    public boolean isConfigured() {
+        return !Strings.isEmpty(model.apiKey) && !Strings.isEmpty(model.model) && !Strings.isEmpty(model.url) && !Strings.isEmpty(model.name);
     }
 
     @Override
@@ -49,9 +45,9 @@ public abstract class LLMTranslator extends Translator {
         HttpClient client = RequestUtil.getClient();
         String body = buildBody(msg);
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(url + "/chat/completions"))
+            .uri(URI.create(model.url + "/chat/completions"))
             .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer " + apiKey)
+            .header("Authorization", "Bearer " + model.apiKey)
             .POST(HttpRequest.BodyPublishers.ofString(body)).build();
         HttpResponse<String> response;
         try {
@@ -60,7 +56,11 @@ public abstract class LLMTranslator extends Translator {
             throw new IOException(e);
         }
         String resp = response.body();
-        return readBody(resp);
+        String t = readBody(resp);
+        if (t.isEmpty()) {
+            return text;
+        }
+        return t;
     }
 
     private String readBody(String body) throws TranslateException {
@@ -70,21 +70,27 @@ public abstract class LLMTranslator extends Translator {
         if (object.has("error")) {
             throw new TranslateException(object.getAsJsonObject("error").get("message").getAsString());
         }
-        JsonArray array = object
+        String result = object
             .getAsJsonArray("choices")
             .get(0).getAsJsonObject()
             .getAsJsonObject("message")
-            .getAsJsonArray("tool_calls");
-        if (array.isEmpty()) {
-
-            throw new TranslateException("翻译失败", new TranslateException(body));
-        }
-
-        String json = array
-            .get(0).getAsJsonObject()
-            .getAsJsonObject("function")
-            .get("arguments").getAsString();
-        return JsonParser.parseString(json).getAsJsonObject().get("result").getAsString();
+            .get("content").getAsString();
+        return result;
+//        JsonArray array = object
+//            .getAsJsonArray("choices")
+//            .get(0).getAsJsonObject()
+//            .getAsJsonObject("message")
+//            .getAsJsonArray("tool_calls");
+//        if (array.isEmpty()) {
+//
+//            throw new TranslateException("翻译失败", new TranslateException(body));
+//        }
+//
+//        String json = array
+//            .get(0).getAsJsonObject()
+//            .getAsJsonObject("function")
+//            .get("arguments").getAsString();
+//        return JsonParser.parseString(json).getAsJsonObject().get("result").getAsString();
     }
 
     private static final Gson gson = new Gson();
@@ -97,70 +103,28 @@ public abstract class LLMTranslator extends Translator {
                   "role": "user",
                   "content": %s
                 }
-              ],
-              "tools": [
-                {
-                  "type": "function",
-                  "function": {
-                    "name": "result",
-                    "description": "set translate result",
-                    "parameters": {
-                      "type": "object",
-                      "properties": {
-                        "result": {
-                          "type": "string",
-                          "description": ""
-                        }
-                      },
-                      "required": ["result"]
-                    }
-                  }
-                }
-              ],
-              "tool_choice": {
-                "type": "function",
-                "function": {
-                  "name": "result"
-                }
-              }
+              ]
             }
-            """.formatted(model, gson.toJson(msg));
+            """.formatted(model.model, gson.toJson(msg));
     }
 
     @Override
     public String getName() {
-        return name;
-    }
-
-    public void setConfig(String apiKey, String model) {
-        if (!StringUtils.isBlank(apiKey)) {
-            this.apiKey = apiKey;
-        }
-        if (!StringUtils.isBlank(model)) {
-            this.model = model;
-        }
-        if (!StringUtils.isBlank(apiKey) && !StringUtils.isBlank(model)) {
-            setConfigured();
-        }
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    @Override
-    public void read(JsonObject jsonObject) {
-        setConfig(jsonObject.get("apiKey").getAsString(), jsonObject.get("model").getAsString());
-    }
-
-    @Override
-    public void write(JsonObject jsonObject) {
-        jsonObject.addProperty("apiKey", apiKey);
-        jsonObject.addProperty("model", model);
+        return model.name;
     }
 
     @Override
     public String getLanguageType() {
         return "AI翻译";
+    }
+
+    @Override
+    public void read(JsonObject object) {
+
+    }
+
+    @Override
+    public void write(JsonObject object) {
+
     }
 }
