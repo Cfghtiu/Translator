@@ -76,11 +76,7 @@ public class LLMManager {
 
     private static void addLLMTranslator(Model model) {
         LLMTranslator translator;
-        if (FabricLoader.getInstance().isModLoaded("cloth-config")) {
-            translator = new LLMTranslatorModMenuImpl(model.name, model.url);
-        } else {
-            translator = new LLMTranslatorImpl(model.name, model.url);
-        }
+        translator = new LLMTranslatorModMenuImpl(model.name, model.url);
         translator.setConfig("", model.defaultModel());
         TranslatorManager.addTranslator(translator);
     }

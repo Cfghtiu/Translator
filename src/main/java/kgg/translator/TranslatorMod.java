@@ -39,15 +39,8 @@ public class TranslatorMod implements ClientModInitializer {
         KeyBindingHandler.register();
 
         // 普通翻译器
-        if (FabricLoader.getInstance().isModLoaded("cloth-config")) {
-            TranslatorManager.addTranslator(new BaiduTranslatorModMenuImpl());
-            TranslatorManager.addTranslator(new YouDaoTranslatorModMenuImpl());
-        } else {
-            TranslatorManager.addTranslator(new BaiduTranslatorImpl());
-            TranslatorManager.addTranslator(new YouDaoTranslatorImpl());
-        }
+        TranslatorManager.addTranslator(new BaiduTranslatorModMenuImpl());
+        TranslatorManager.addTranslator(new YouDaoTranslatorModMenuImpl());
         LLMManager.init();
     }
-
-
 }
