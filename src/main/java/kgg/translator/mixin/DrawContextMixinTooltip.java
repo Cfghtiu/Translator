@@ -67,56 +67,84 @@ public abstract class DrawContextMixinTooltip {
         DrawContextMixinTooltip.positioner = positioner;
     }
 
+
+    @Unique
+    private boolean firstCall = true;  // 防止重复调用
+
     /**
-     * 重定向getPosition可以方便的获得屏幕大小
+     * 重定向 getPosition 以在原文 Tooltip 旁边显示翻译内容
      */
-    @Redirect(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;IILnet/minecraft/client/gui/tooltip/TooltipPositioner;Lnet/minecraft/util/Identifier;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/tooltip/TooltipPositioner;getPosition(IIIIII)Lorg/joml/Vector2ic;"))
-    public Vector2ic getPosition(TooltipPositioner instance, int screenWidth, int screenHeight, int x, int y, int width, int height) {
-        // 原位置
+    @Redirect(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;IILnet/minecraft/client/gui/tooltip/TooltipPositioner;Lnet/minecraft/util/Identifier;)V",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/tooltip/TooltipPositioner;getPosition(IIIIII)Lorg/joml/Vector2ic;"))
+    public Vector2ic redirectGetPosition(TooltipPositioner instance, int screenWidth, int screenHeight, int x, int y, int width, int height) {
+        // 原 Tooltip 的位置
         Vector2ic position = instance.getPosition(screenWidth, screenHeight, x, y, width, height);
-        // 如果没有翻译文本，则直接返回原位置
-        if (!TipHandler.drawTranslateText) {
+
+        // 如果不需要翻译或非首次调用，直接返回原位置
+        if (!firstCall || !TipHandler.isNeedTranslate()) {
             return position;
+        }
+
+        // 获取翻译文本组件
+        List<TooltipComponent> components;
+        if (TipHandler.isDrawTranslateText()) {
+            components = Arrays.stream(TipHandler.getTranslatedOrderedText())
+                .map(TooltipComponent::of)
+                .toList();
         } else {
-            List<TooltipComponent> components = Arrays.stream(TipHandler.getTranslatedOrderedText()).map(TooltipComponent::of).toList();
-            TipHandler.drawTranslateText = false;  // 反正下面重新调用此方法再次执行到这里
-            if (!components.isEmpty()) {
-                // 计算翻译文本的矩阵大小
-                int translatedRectWidth = 0;
-                int translatedRectHeight = components.size() == 1 ? -2 : 0;
-                for (TooltipComponent tooltipComponent : components) {
-                    int k = tooltipComponent.getWidth(textRenderer);
-                    if (k > translatedRectWidth) {
-                        translatedRectWidth = k;
-                    }
-                    translatedRectHeight += tooltipComponent.getHeight(textRenderer);
-                }
+            components = List.of(TooltipComponent.of(Text.literal("...").asOrderedText()));
+        }
 
-                /*显示工具栏逻辑如下
-                * 尝试让原文和译文保存在同一行
-                * 但是如果译文的宽度+超过屏幕宽度，则会自动变到左边
-                * 所以要让译文在上下行
-                * */
+        firstCall = false;
 
-                if (position.x() + width + translatedRectWidth + 12 > screenWidth) {
-                    if (y + 12 + height + 3 > screenHeight) {
-                        // -12是与原文x对称
-                        drawTooltip(textRenderer, components, position.x() - 12, y + height + 1 + 12, positioner, null);
-                    } else {
-                        drawTooltip(textRenderer, components, position.x() - 12, y + height + 1 + 12, positioner,null);
-                    }
-                    return position;
-                } else {
-                    // 返回加上翻译文本的总体尺寸
-                    Vector2ic newPosition = instance.getPosition(screenWidth, screenHeight, x, y, width + translatedRectWidth + 1, Math.max(translatedRectHeight, height));
-                    // 渲染
-                    drawTooltip(textRenderer, components, newPosition.x() + width + 1, y, positioner,null);
-                    return newPosition;
-                }
-
-            } else {
-                return position;
+        try {
+            // 计算翻译 Tooltip 尺寸
+            int translatedWidth = 0;
+            int translatedHeight = 0;
+            for (TooltipComponent comp : components) {
+                int w = comp.getWidth(textRenderer);
+                int h = comp.getHeight(textRenderer);
+                translatedWidth = Math.max(translatedWidth, w);
+                translatedHeight += h;
             }
+
+            // 尝试放置的位置
+            int newX;
+            int newY;
+
+            // 优先尝试右侧
+            if (position.x() + width + translatedWidth + 12 <= screenWidth) {
+                newX = position.x() + width + 1;
+                newY = position.y();
+            }
+            // 其次尝试左侧
+            else if (position.x() - translatedWidth - 12 >= 0) {
+                newX = position.x() - translatedWidth - 12;
+                newY = position.y();
+            }
+            // 再尝试下方
+            else if (position.y() + height + translatedHeight + 5 <= screenHeight) {
+                newX = position.x();
+                newY = position.y() + height + 5;
+            }
+            // 最后尝试上方
+            else if (position.y() - translatedHeight - 5 >= 0) {
+                newX = position.x();
+                newY = position.y() - translatedHeight - 5;
+            }
+            // 实在没空间就随便放一个地方，优先下方
+            else {
+                newX = position.x();
+                newY = Math.min(position.y() + height + 5, screenHeight - translatedHeight - 10);
+            }
+
+            // 绘制裁译文 Tooltip
+            drawTooltip(textRenderer, components, newX, newY, positioner, null);
+
+            // 返回原文 Tooltip 的位置
+            return position;
+        } finally {
+            firstCall = true;
         }
     }
 }
