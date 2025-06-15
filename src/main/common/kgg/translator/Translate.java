@@ -8,8 +8,6 @@ import kgg.translator.exception.NoTranslatorException;
 import kgg.translator.exception.NotConfiguredException;
 import kgg.translator.exception.TranslateException;
 import kgg.translator.ocrtrans.ResRegion;
-import kgg.translator.option.Options;
-import kgg.translator.translator.Source;
 import kgg.translator.translator.Translator;
 import kgg.translator.util.StringUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -36,9 +34,6 @@ public class Translate {
     });
 
     private static Text createText(String text, String source) {
-        if (!Options.markSources.getValue()) {
-            source = Source.UNKNOWN;
-        }
         return new Text(text, source);
     }
 

@@ -46,8 +46,6 @@ public class Options {
     public static final SimpleOption<Boolean> signCombine = registerBoolWithTooltip("sign_combine", true);
 
     // 内置
-    // 标记翻译源，用于让llm翻译地更准确
-    public static SimpleOption<Boolean> markSources = registerBoolWithTooltip("mark_sources", false);
     // 多方翻译，允许交替使用配置好的翻译器，加快翻译速度
     // todo 还没做
     public static SimpleOption<Boolean> multiTranslation = registerBoolWithTooltip("multi-translation", false);
