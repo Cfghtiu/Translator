@@ -13,6 +13,12 @@ public class Language {
     public static final Map<String, String> defaultMap = new HashMap<>();
     public static final Map<String, Map<String, String>> translatorMap = new HashMap<>();
 
+    public static void clear() {
+        predicateMap.clear();
+        defaultMap.clear();
+        translatorMap.clear();
+    }
+
     public static void load(String json) {
         JsonObject object = JsonParser.parseString(json).getAsJsonObject();
         Optional.of(object.get("default")).ifPresent(o -> o.getAsJsonObject().entrySet().forEach(entry -> {

@@ -39,7 +39,10 @@ public class TranslatorConfig {
         JsonObject config;
         JsonObject options;
         try {
+            Language.clear();
             Language.load(TranslatorConfig.read("language.json"));
+            ChatFormat.clear();
+            ChatFormat.load(TranslatorConfig.read("chat-format.json"));
 
             config = ConfigUtil.load(file);
             boolean b = readConfig(config);
@@ -83,6 +86,7 @@ public class TranslatorConfig {
                 config.add(translator.getName(), object);
             }
         });
+        config.addProperty("format", ChatFormat.getCurrentFormat());
         return true;
     }
 
@@ -108,6 +112,7 @@ public class TranslatorConfig {
                     TranslatorManager.setTranslator(translator);
                 }
             });
+            ChatFormat.setCurrentFormat(config.get("format").getAsString());
             LOGGER.info("Config read successfully");
             return true;
         } catch (Exception e) {

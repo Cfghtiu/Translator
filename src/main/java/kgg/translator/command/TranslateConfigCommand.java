@@ -3,6 +3,7 @@ package kgg.translator.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import kgg.translator.ChatFormat;
 import kgg.translator.Translate;
 import kgg.translator.TranslatorConfig;
 import kgg.translator.TranslatorManager;
@@ -75,6 +76,21 @@ public class TranslateConfigCommand {
             .executes(context -> {
                 TranslatorConfig.readFile();
                 context.getSource().sendFeedback(Text.literal("OK"));
+                return 0;
+            }));
+
+        // /trans-config chat-format
+        root.then(ClientCommandManager.literal("chat-format")
+            .then(ClientCommandManager.argument("format", ChatFormatArgumentType.chatFormat())
+                .executes(context -> {
+                    String format = ChatFormatArgumentType.getChatFormat(context, "format");
+                    ChatFormat.setCurrentFormat(format);
+                    TranslatorConfig.writeFile();
+                    context.getSource().sendFeedback(Text.literal("OK"));
+                    return 0;
+                }))
+            .executes(context -> {
+                context.getSource().sendFeedback(Text.literal("Current format: " + ChatFormat.getCurrentFormat()));
                 return 0;
             }));
 
