@@ -1,6 +1,6 @@
 package kgg.translator.mixin.screen;
 
-import kgg.translator.Translate;
+import kgg.translator.TranslateService;
 import kgg.translator.exception.TranslateException;
 import kgg.translator.translator.Source;
 import kgg.translator.util.TextUtil;
@@ -47,7 +47,7 @@ public class BookScreenMixin extends Screen {
                     StringJoiner sb = new StringJoiner(" ");
                     cachedPage.forEach(text -> sb.add(TextUtil.getString(text)));
 
-                    translateText = Translate.cachedTranslate(sb.toString(), Source.BOOK);
+                    translateText = TranslateService.cachedTranslate(sb.toString(), Source.BOOK);
                 } catch (TranslateException e) {
                     translateText = e.getMessage();
                 }

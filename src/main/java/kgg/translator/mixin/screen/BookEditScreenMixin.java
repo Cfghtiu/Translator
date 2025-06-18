@@ -1,6 +1,6 @@
 package kgg.translator.mixin.screen;
 
-import kgg.translator.Translate;
+import kgg.translator.TranslateService;
 import kgg.translator.exception.TranslateException;
 import kgg.translator.translator.Source;
 import net.minecraft.client.gui.DrawContext;
@@ -46,7 +46,7 @@ public abstract class BookEditScreenMixin extends Screen {
             if (!signing) {
                 CompletableFuture.runAsync(() -> {
                     try {
-                        translateText = Translate.cachedTranslate(pages.get(currentPage), Source.BOOK);
+                        translateText = TranslateService.cachedTranslate(pages.get(currentPage), Source.BOOK);
                     } catch (TranslateException e) {
                         translateText = e.getMessage();
                     }

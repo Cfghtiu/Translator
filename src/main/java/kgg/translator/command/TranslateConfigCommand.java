@@ -3,10 +3,7 @@ package kgg.translator.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import kgg.translator.ChatFormat;
-import kgg.translator.Translate;
-import kgg.translator.TranslatorConfig;
-import kgg.translator.TranslatorManager;
+import kgg.translator.*;
 import kgg.translator.modmenu.ModMenuApiImpl;
 import kgg.translator.screen.ConfigJsonScreen;
 import kgg.translator.translator.Translator;
@@ -52,7 +49,7 @@ public class TranslateConfigCommand {
         // /trans-config clearcache
         root.then(ClientCommandManager.literal("clearcache")
                 .executes(context -> {
-                    Translate.clearCache();
+                    TranslateService.clearCache();
                     kgg.translator.handler.TranslateHelper.clearCache();
                     context.getSource().sendFeedback(Text.literal("OK"));
                     return 0;

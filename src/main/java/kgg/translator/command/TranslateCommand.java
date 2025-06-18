@@ -3,7 +3,7 @@ package kgg.translator.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import kgg.translator.Translate;
+import kgg.translator.TranslateService;
 import kgg.translator.TranslatorManager;
 import kgg.translator.exception.TranslateException;
 import kgg.translator.translator.Source;
@@ -39,7 +39,7 @@ public class TranslateCommand {
         CompletableFuture.runAsync(() -> {
             Text message;
             try {
-                String result = Translate.translate(text, TranslatorManager.getCurrent(), from, to, Source.CHAT);
+                String result = TranslateService.translate(text, TranslatorManager.getCurrent(), from, to, Source.CHAT);
                 message = Text.literal("[结果] " +result).setStyle(Style.EMPTY
                         .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, result))
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("点击复制"))));

@@ -1,7 +1,7 @@
 package kgg.translator.handler;
 
 import kgg.translator.ChatFormat;
-import kgg.translator.Translate;
+import kgg.translator.TranslateService;
 import kgg.translator.event.TranslateChatEvent;
 import kgg.translator.option.Options;
 import kgg.translator.translator.Source;
@@ -108,7 +108,7 @@ public class ChatHandler {
         translatingTexts.add(text);
         CompletableFuture.supplyAsync(() -> {
             try {
-                String result = Translate.cachedTranslate(t, Source.CHAT);
+                String result = TranslateService.cachedTranslate(t, Source.CHAT);
                 return createResultText(result, text);
             } catch (Exception e) {
                 return createErrorText(e.getMessage(), text, s);

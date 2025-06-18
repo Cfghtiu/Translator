@@ -1,6 +1,6 @@
 package kgg.translator.handler;
 
-import kgg.translator.Translate;
+import kgg.translator.TranslateService;
 import kgg.translator.exception.TranslateException;
 import kgg.translator.translator.Source;
 import kgg.translator.util.TextUtil;
@@ -66,7 +66,7 @@ public class TipHandler {
 
         CompletableFuture.supplyAsync(() -> {
             try {
-                return Translate.cachedTranslate(text, Source.TOOLTIP);
+                return TranslateService.cachedTranslate(text, Source.TOOLTIP);
             } catch (TranslateException e) {
                 LOGGER.error("Translation failed", e);
                 return text;

@@ -1,25 +1,16 @@
 package kgg.translator.mixin.hud;
 
-import kgg.translator.Translate;
-import kgg.translator.exception.TranslateException;
 import kgg.translator.handler.ChatHandler;
-import kgg.translator.translator.Source;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import java.util.concurrent.CompletableFuture;
 
 @Mixin(ChatScreen.class)
 public abstract class ChatScreenMixin extends Screen {
