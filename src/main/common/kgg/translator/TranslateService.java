@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Predicate;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 
@@ -35,7 +36,7 @@ public class TranslateService {
     }
 
     public static String translate(String text, Translator translator, String from, String to, String source) throws TranslateException {
-        if (shouldSkipTranslation(text, to)) {
+        if (shouldSkipTranslation(translator, text, to)) {
             return text;
         }
         checkTranslator(translator);
@@ -69,12 +70,17 @@ public class TranslateService {
         return CACHE_MANAGER.getCache(text, source);
     }
 
-    // ======================== 私有方法 ========================
-    private static boolean shouldSkipTranslation(String text, String to) {
+    public static boolean shouldSkipTranslation(String text) {
+        return shouldSkipTranslation(getCurrent(), text, getTo());
+    }
+
+    public static boolean shouldSkipTranslation(Translator translator, String text, String to) {
+        Predicate<String> predicate = Language.getPredicate(Language.getLeftLang(translator.getLanguageType(), to));
         return StringUtil.isBlank(text) ||
             StringUtils.isNumeric(text) ||
-            Language.getPredicate(to).test(text);
+            predicate.test(text);
     }
+    // ======================== 私有方法 ========================
 
     private static void checkTranslator(Translator translator) throws TranslateException {
         if (translator == null) {
@@ -145,7 +151,7 @@ public class TranslateService {
                 .build(new CacheLoader<>() {
                     @Override
                     public @NotNull String load(@NotNull TextKey key) throws TranslateException {
-                        return TranslateService.performTranslation(
+                        return TranslateService.translate(
                             key.text(),
                             getCurrent(),
                             getFrom(),

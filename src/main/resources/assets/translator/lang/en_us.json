@@ -33,7 +33,7 @@
 
     "translator.option.chat_tip": "Chat Translation Prompt",
     "translator.option.auto_chat": "Translate Chat",
-    "translator.option.auto_tooltip": "Translate Items",
+    "translator.option.auto_tooltip": "Translate Tooltip",
     "translator.option.auto_title": "Translate Titles",
     "translator.option.auto_scoreboard": "Translate Scoreboards",
     "translator.option.auto_boss_bar": "Translate Boss Bars",

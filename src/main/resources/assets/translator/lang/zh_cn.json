@@ -32,7 +32,7 @@
 
   "translator.option.chat_tip": "聊天翻译提示",
   "translator.option.auto_chat": "翻译聊天",
-  "translator.option.auto_tooltip": "翻译物品",
+  "translator.option.auto_tooltip": "翻译工具提示",
   "translator.option.auto_title": "翻译标题",
   "translator.option.auto_scoreboard": "翻译计分板",
   "translator.option.auto_boss_bar": "翻译boss栏",

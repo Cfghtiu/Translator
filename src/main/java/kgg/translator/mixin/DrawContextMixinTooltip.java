@@ -2,11 +2,13 @@ package kgg.translator.mixin;
 
 import kgg.translator.handler.TipHandler;
 import kgg.translator.option.Options;
+import kgg.translator.util.TextUtil;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.gui.tooltip.TooltipPositioner;
 import net.minecraft.item.tooltip.TooltipData;
+import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
@@ -34,27 +36,33 @@ public abstract class DrawContextMixinTooltip {
     @Unique
     @Deprecated public abstract void draw(Runnable drawCallback);
 
+    @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;IILnet/minecraft/util/Identifier;)V", at = @At("HEAD"))
+    public void drawTooltip(TextRenderer textRenderer, List<Text> text, int x, int y, @Nullable Identifier texture, CallbackInfo ci) {
+        if (Options.autoTooltip.getValue()) {
+            TipHandler.handle((DrawContext) (Object) this, text, x, y, 0.4f);
+        }
+    }
+
+    @Inject(method = "drawOrderedTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;IILnet/minecraft/util/Identifier;)V", at = @At("HEAD"))
+    public void drawOrderedTooltip(TextRenderer textRenderer, List<? extends OrderedText> text, int x, int y, @Nullable Identifier texture, CallbackInfo ci) {
+        if (Options.autoTooltip.getValue()) {
+            TipHandler.handle((DrawContext) (Object) this, text.stream().map(TextUtil::getString).map(Text::of).toList(), x, y, 0.4f);
+        }
+    }
+
+    @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Lnet/minecraft/client/gui/tooltip/TooltipPositioner;II)V", at = @At("HEAD"))
+    public void drawTooltip(TextRenderer textRenderer, List<OrderedText> text, TooltipPositioner positioner, int x, int y, CallbackInfo ci) {
+        if (Options.autoTooltip.getValue()) {
+            TipHandler.handle((DrawContext) (Object) this, text.stream().map(TextUtil::getString).map(Text::of).toList(), x, y, 0.4f);
+        }
+    }
+
     @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;IILnet/minecraft/util/Identifier;)V", at = @At("HEAD"))
     public void drawTooltip(TextRenderer textRenderer, List<Text> text, Optional<TooltipData> data, int x, int y, Identifier texture, CallbackInfo ci) {
         if (Options.autoTooltip.getValue()) {
             TipHandler.handle((DrawContext) (Object) this, text, x, y, 0.4f);
         }
     }
-
-    @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;II)V", at = @At("HEAD"))
-    public void drawTooltip(TextRenderer textRenderer, List<Text> text, int x, int y, CallbackInfo ci) {
-        if (Options.autoTooltip.getValue()) {
-            TipHandler.handle((DrawContext) (Object) this, text, x, y, 0.4f);
-        }
-    }
-
-    @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Lnet/minecraft/text/Text;II)V", at = @At("RETURN"))
-    public void drawTooltip(TextRenderer textRenderer, Text text, int x, int y, CallbackInfo ci) {
-        if (Options.autoTooltip.getValue()) {
-            TipHandler.handle((DrawContext) (Object) this, List.of(text), x, y, 0.4f);
-        }
-    }
-
 
     @Unique
     private static TextRenderer textRenderer;
@@ -80,8 +88,8 @@ public abstract class DrawContextMixinTooltip {
         // 原 Tooltip 的位置
         Vector2ic position = instance.getPosition(screenWidth, screenHeight, x, y, width, height);
 
-        // 如果不需要翻译或非首次调用，直接返回原位置
-        if (!firstCall || !TipHandler.isNeedTranslate()) {
+        // 如果不需要翻译或非首次调用，或者不在handle后调用，直接返回原位置
+        if (!TipHandler.isHandleAfter() || !firstCall || !TipHandler.isNeedTranslate()) {
             return position;
         }
 
