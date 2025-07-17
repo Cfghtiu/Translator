@@ -89,4 +89,8 @@ public class LLMManager {
             this.apiKey = apiKey == null ? "" : apiKey;
         }
     }
+    public static void setModels(Map<String, Model> newModels) {
+        models.clear();
+        models.putAll(newModels);
+    }
 }
