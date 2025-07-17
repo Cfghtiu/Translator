@@ -46,9 +46,7 @@ public class LLMManager {
 
     public static Model[] geBuiltInModels() {
         return new Model[] {
-            new Model("KIMI", "https://api.moonshot.cn/v1", "moonshot-v1-8k", ""),
-            new Model("质谱", "https://open.bigmodel.cn/api/paas/v4", "GLM-4-Flash", ""),
-            new Model("ChatGPT", "https://api.openai.com/v1/completions", "gpt-3.5-turbo", "")
+            new Model("OpenAI兼容接口", "", "", "")
         };
     }
 
