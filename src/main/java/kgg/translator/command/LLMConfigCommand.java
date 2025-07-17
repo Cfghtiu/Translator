@@ -84,10 +84,6 @@ public class LLMConfigCommand {
             boolean isCurrentModel = TranslatorManager.getCurrent() != null && 
                                    TranslatorManager.getCurrent().getName().equals(model.name);
             
-            Text modelText = Text.literal("- " + model.name)
-                .formatted(isCurrentModel ? Formatting.GOLD : Formatting.YELLOW)
-                .append(isCurrentModel ? Text.literal(" [当前使用]").formatted(Formatting.GREEN) : Text.empty());
-            
             Text detailsText = Text.literal("\n  URL: ").formatted(Formatting.GRAY)
                 .append(Text.literal(model.url).formatted(Formatting.WHITE))
                 .append(Text.literal("\n  Model: ").formatted(Formatting.GRAY))
@@ -96,9 +92,12 @@ public class LLMConfigCommand {
                 .append(Text.literal(model.apiKey.isEmpty() ? "[未设置]" : "[已设置]")
                     .formatted(model.apiKey.isEmpty() ? Formatting.RED : Formatting.GREEN));
             
-            modelText = modelText.setStyle(Style.EMPTY
-                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, detailsText))
-                .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/llm use " + model.name)));
+            Text modelText = Text.literal("- " + model.name)
+                .formatted(isCurrentModel ? Formatting.GOLD : Formatting.YELLOW)
+                .styled(style -> style
+                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, detailsText))
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/llm use " + model.name)))
+                .append(isCurrentModel ? Text.literal(" [当前使用]").formatted(Formatting.GREEN) : Text.empty());
             
             context.getSource().sendFeedback(modelText);
         }
@@ -211,9 +210,6 @@ public class LLMConfigCommand {
         context.getSource().sendFeedback(Text.literal("内置LLM模型模板:").formatted(Formatting.GREEN));
         
         for (LLMManager.Model model : LLMManager.geBuiltInModels()) {
-            Text modelText = Text.literal("- " + model.name).formatted(Formatting.YELLOW)
-                .append(Text.literal(" (点击添加)").formatted(Formatting.GRAY));
-            
             String addCommand = String.format("/llm add %s \"%s\" \"%s\" YOUR_API_KEY", 
                 model.name.replace(" ", "_"), model.url, model.model);
             
@@ -221,9 +217,11 @@ public class LLMConfigCommand {
                 .append("Model: " + model.model + "\n")
                 .append("点击后需要替换 YOUR_API_KEY 为实际的API密钥");
             
-            modelText = modelText.setStyle(Style.EMPTY
-                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, detailsText))
-                .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, addCommand)));
+            Text modelText = Text.literal("- " + model.name).formatted(Formatting.YELLOW)
+                .styled(style -> style
+                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, detailsText))
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, addCommand)))
+                .append(Text.literal(" (点击添加)").formatted(Formatting.GRAY));
             
             context.getSource().sendFeedback(modelText);
         }
