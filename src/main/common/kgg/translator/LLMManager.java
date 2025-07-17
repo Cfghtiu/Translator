@@ -46,7 +46,7 @@ public class LLMManager {
 
     public static Model[] geBuiltInModels() {
         return new Model[] {
-            new Model("OpenAI兼容接口", "", "", "")
+            new Model("OpenAI兼容接口", "https://api.openai.com/v1/chat/completions", "", "")
         };
     }
 

@@ -72,7 +72,7 @@ public abstract class LLMTranslator extends Translator {
             String body = buildBody(msg);
             
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                .uri(URI.create(model.url + "/chat/completions"))
+                .uri(URI.create(model.url))
                 .header("Content-Type", "application/json")
                 .timeout(java.time.Duration.ofSeconds(30))
                 .POST(HttpRequest.BodyPublishers.ofString(body));
@@ -95,9 +95,17 @@ public abstract class LLMTranslator extends Translator {
             
             // 检查响应状态
             if (response.statusCode() != 200) {
-                LOGGER.error("LLM API返回错误状态码: {}, 响应: {}", response.statusCode(), response.body());
-                throw new TranslateException("API请求失败: HTTP " + response.statusCode());
+                StringBuilder sb = new StringBuilder();
+                sb.append("LLM API请求失败！\n");
+                sb.append("状态码: ").append(response.statusCode()).append("\n");
+                sb.append("响应头:\n");
+                response.headers().map().forEach((k, v) -> sb.append("  ").append(k).append(": ").append(v).append("\n"));
+                sb.append("响应体:\n").append(response.body());
+            
+                LOGGER.error(sb.toString());
+                throw new TranslateException("API请求失败: HTTP " + response.statusCode() + response.body());
             }
+
             
             String resp = response.body();
             String translatedText = parseResponse(resp);
@@ -119,6 +127,9 @@ public abstract class LLMTranslator extends Translator {
      * 解析API响应
      */
     private String parseResponse(String body) throws TranslateException {
+        if (!body.trim().startsWith("{")) {
+            throw new TranslateException("返回内容不是JSON: " + body);
+        }
         try {
             JsonObject object = JsonParser.parseString(body).getAsJsonObject();
             
