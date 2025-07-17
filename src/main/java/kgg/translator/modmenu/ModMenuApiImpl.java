@@ -101,20 +101,11 @@ public class ModMenuApiImpl implements ModMenuApi {
 
     private static void updateModels(List<LLMManager.Model> list) {
         Map<String, LLMManager.Model> models = new HashMap<>(LLMManager.getModels());
-        // 删除不包含的东西
-        models.forEach((name, model) -> {
-            boolean contains = false;
-            for (LLMManager.Model newModel : list) {
-                if (newModel.name.equals(name)) {
-                    contains = true;
-                    break;
-                }
-            }
-            if (!contains) {
-                models.remove(name);
-            }
-        });
-        // 有就更新，没有就添加
+
+        // 删除不包含的项
+        models.keySet().removeIf(name -> list.stream().noneMatch(m -> m.name.equals(name)));
+
+        // 更新或添加新模型
         for (LLMManager.Model model : list) {
             if (models.containsKey(model.name)) {
                 LLMManager.Model old = models.get(model.name);
@@ -125,6 +116,20 @@ public class ModMenuApiImpl implements ModMenuApi {
                 LLMManager.addModel(model);
             }
         }
-        
+
+        // 检查当前翻译器是否还存在
+        Translator current = TranslatorManager.getCurrent();
+        if (current instanceof LLMTranslator llm) {
+            String currentName = llm.getName();
+            boolean exists = list.stream().anyMatch(m -> m.name.equals(currentName));
+            if (!exists && !list.isEmpty()) {
+                // 当前翻译器被删除了，自动切换为第一个可用的新翻译器
+                Optional<Translator> newTranslator = TranslatorManager.getTranslators().stream()
+                    .filter(t -> t instanceof LLMTranslator llmT && list.stream().anyMatch(m -> m.name.equals(llmT.getName())))
+                    .findFirst();
+
+                newTranslator.ifPresent(TranslatorManager::setTranslator);
+            }
+        }
     }
 }
