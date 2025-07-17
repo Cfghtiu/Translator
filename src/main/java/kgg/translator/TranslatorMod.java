@@ -1,5 +1,6 @@
 package kgg.translator;
 
+import kgg.translator.command.LLMConfigCommand;
 import kgg.translator.command.TranslateCommand;
 import kgg.translator.command.TranslateConfigCommand;
 import kgg.translator.handler.KeyBindingHandler;
@@ -27,6 +28,7 @@ public class TranslatorMod implements ClientModInitializer {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             TranslateCommand.register(dispatcher);
             TranslateConfigCommand.register(dispatcher);
+            LLMConfigCommand.register(dispatcher);  // 注册LLM配置命令
         });
 
         Options.init();
