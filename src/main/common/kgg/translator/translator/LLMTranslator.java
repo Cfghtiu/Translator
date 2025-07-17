@@ -233,7 +233,7 @@ public abstract class LLMTranslator extends Translator {
 
     @Override
     public String getLanguageType() {
-        return "AI翻译";
+        return "OpenAI";
     }
 
     @Override

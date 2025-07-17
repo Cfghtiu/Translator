@@ -66,7 +66,7 @@ public class ModMenuApiImpl implements ModMenuApi {
         }
         // 他源码读的是真累啊
         category.addEntry(new NestedListListEntry<LLMManager.Model, MultiElementListEntry<LLMManager.Model>>(
-            Text.literal("AI翻译"),
+            Text.literal("OpenAI"),
             Lists.newArrayList(LLMManager.getModels().values()),
             true,
             Optional::empty,
