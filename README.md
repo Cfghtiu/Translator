@@ -29,7 +29,7 @@
 模组支持：
 - 百度翻译
 - 有道翻译
-- OpenAI兼容接口：适用ChatGPT、Google、KIMI、质谱等支持OpenAI接口的大模型
+- OpenAI：适用ChatGPT、Google、KIMI、质谱等支持OpenAI接口的大模型
 用户需要自行从相应平台获取 API 密钥后，使用命令配置对应翻译器以使用这些服务。
 
 
