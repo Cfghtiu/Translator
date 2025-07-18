@@ -25,11 +25,10 @@
     "translator.configscreen.modmenu": "More convenient editing",
     "translator.configscreen.tip": "need mod \"cloth-config\"",
     "translator.modmenu.title": "Translation Configuration",
-    "translator.modmenu.current": "Current Translator",
+    "translator.modmenu.current": "Current Translator(Reopen the page if the model name has been added or changed)",
     "translator.modmenu.from": "Source Language",
     "translator.modmenu.to": "Target Language",
     "translator.modmenu.suggestion": "It is recommended to use /transconfig language for configuration",
-
 
     "translator.option.chat_tip": "Chat Translation Prompt",
     "translator.option.auto_chat": "Translate Chat",

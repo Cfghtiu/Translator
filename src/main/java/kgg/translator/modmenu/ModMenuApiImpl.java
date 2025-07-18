@@ -20,6 +20,10 @@ import net.minecraft.text.Text;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.lang.reflect.Field;
 
 public class ModMenuApiImpl implements ModMenuApi {
     // 用于跟踪是否需要重新创建配置屏幕
@@ -73,13 +77,43 @@ public class ModMenuApiImpl implements ModMenuApi {
                 }
             }
         }
-        // 他源码读的是真累啊
+        
         // 记录修改前的模型数量和名称
         Map<String, LLMManager.Model> originalModels = new HashMap<>(LLMManager.getModels());
         
+        // 自定义提示词
+        String currentPrompt = LLMManager.getPrompt();
+        final String[] promptValue = {currentPrompt != null ? currentPrompt : ""};
+        category.addEntry(entryBuilder.startStrField(Text.literal("prompt（高级选项）"), promptValue[0])
+            .setDefaultValue("""
+            You are translating Minecraft RPG map content. Translate from {from} to {to} following these guidelines:
+
+            PRESERVE EXACTLY:
+            - Color codes: §0-§9, §a-§f, §k-§o, §r
+            - Placeholders: %s, %d, %player%, %location%, {0}, {1}, etc.
+            - Commands: /give, /tp, /summon, etc.
+            - NBT tags and data values
+
+            TRANSLATION STYLE:
+            - Use fantasy RPG vocabulary appropriate for the target language
+            - Keep quest descriptions epic and engaging
+            - Make NPC dialogue natural and character-appropriate
+            - Maintain consistency for recurring terms (classes, skills, items)
+
+            SPECIAL TERMS:
+            - Keep English names for unique items/bosses if they're proper nouns
+            - Translate generic terms (sword→剑, potion→药水)
+            - Adapt cultural references appropriately
+
+            Text to translate: {text}
+            """)
+            .setTooltip(Text.literal("自定义翻译提示词。可用变量: {from}, {to}, {text}"))
+            .setSaveConsumer(s -> promptValue[0] = s)
+            .build());
+        
         // LLM 模型配置
         category.addEntry(new NestedListListEntry<LLMManager.Model, MultiElementListEntry<LLMManager.Model>>(
-            Text.literal("OpenAI-compatible API"),
+            Text.literal("OpanAI_api"),
             Lists.newArrayList(LLMManager.getModels().values()),
             true,
             Optional::empty,
@@ -119,6 +153,12 @@ public class ModMenuApiImpl implements ModMenuApi {
 
         builder.setSavingRunnable(() -> {
             onSave.forEach(Runnable::run);
+            
+            // 保存自定义提示词
+            if (!promptValue[0].equals(LLMManager.getPrompt())) {
+                savePrompt(promptValue[0]);
+            }
+            
             TranslatorConfig.writeFile();
             
             // 如果需要刷新，重新打开配置屏幕
@@ -185,6 +225,32 @@ public class ModMenuApiImpl implements ModMenuApi {
                         .ifPresent(TranslatorManager::setTranslator);
                 }
             }
+        }
+    }
+    
+    /**
+     * 保存自定义提示词到文件
+     */
+    private static void savePrompt(String prompt) {
+        try {
+            // 通过反射设置 prompt 字段
+            Field promptField = LLMManager.class.getDeclaredField("prompt");
+            promptField.setAccessible(true);
+            promptField.set(null, prompt);
+            
+            // 保存到 prompt.txt 文件
+            Path configPath = net.fabricmc.loader.api.FabricLoader.getInstance()
+                .getConfigDir()
+                .resolve("translator")
+                .resolve("prompt.txt");
+            
+            // 确保目录存在
+            Files.createDirectories(configPath.getParent());
+            
+            // 写入文件
+            Files.writeString(configPath, prompt);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
