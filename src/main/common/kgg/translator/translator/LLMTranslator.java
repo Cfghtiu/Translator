@@ -69,6 +69,8 @@ public abstract class LLMTranslator extends Translator {
             map.put("text", text);
             
             StrSubstitutor strSubstitutor = new StrSubstitutor(map);
+            strSubstitutor.setVariablePrefix("{");
+            strSubstitutor.setVariableSuffix("}");
             String msg = strSubstitutor.replace(LLMManager.getPrompt());
 
             // 发送请求
