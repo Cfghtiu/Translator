@@ -25,7 +25,7 @@
   "translator.configscreen.modmenu": "更方便的编辑",
   "translator.configscreen.tip": "需要 \"cloth-config\" 模组",
   "translator.modmenu.title": "翻译配置",
-  "translator.modmenu.current": "当前翻译器",
+  "translator.modmenu.current": "当前翻译器（若新增/修改了模型名称，请重新打开页面）",
   "translator.modmenu.from": "源语言",
   "translator.modmenu.to": "目标语言",
   "translator.modmenu.suggestion": "建议使用/transconfig language配置",

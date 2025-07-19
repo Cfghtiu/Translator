@@ -20,11 +20,22 @@ import net.minecraft.text.Text;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.lang.reflect.Field;
 
 public class ModMenuApiImpl implements ModMenuApi {
+    // 用于跟踪是否需要重新创建配置屏幕
+    private static boolean needsRefresh = false;
+    private static Screen lastParentScreen = null;
+    
     @Override
     public ConfigScreenFactory<?> getModConfigScreenFactory() {
-        return ModMenuApiImpl::createScreen;
+        return parent -> {
+            lastParentScreen = parent;
+            return createScreen(parent);
+        };
     }
 
     public static Screen createScreen(Screen p) {
@@ -32,6 +43,7 @@ public class ModMenuApiImpl implements ModMenuApi {
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
 
         ConfigCategory category = builder.getOrCreateCategory(Text.translatable("translator.modmenu.title"));
+        
         // 当前翻译器
         DropdownBoxEntry<Translator> listEntry = entryBuilder.startDropdownMenu(Text.translatable("translator.modmenu.current"),
                 TranslatorManager.getCurrent(),
@@ -41,6 +53,7 @@ public class ModMenuApiImpl implements ModMenuApi {
             .setSaveConsumer(TranslatorManager::setTranslator)
             .build();
         category.addEntry(listEntry);
+        
         // From To
         category.addEntry(entryBuilder.startStrField(Text.translatable("translator.modmenu.from"), TranslatorManager.getFrom())
             .setSaveConsumer(TranslatorManager::setFrom)
@@ -50,8 +63,8 @@ public class ModMenuApiImpl implements ModMenuApi {
             .setSaveConsumer(TranslatorManager::setTo)
             .setTooltip(Text.translatable("translator.modmenu.suggestion"))
             .build());
+        
         // 翻译器配置
-
         // 普通翻译器
         List<Runnable> onSave = new ArrayList<>(TranslatorManager.getTranslators().size());
         for (Translator translator : TranslatorManager.getTranslators()) {
@@ -64,28 +77,78 @@ public class ModMenuApiImpl implements ModMenuApi {
                 }
             }
         }
-        // 他源码读的是真累啊
+        
+        // 记录修改前的模型数量和名称
+        Map<String, LLMManager.Model> originalModels = new HashMap<>(LLMManager.getModels());
+        
+        // 自定义提示词
+        String currentPrompt = LLMManager.getPrompt();
+        final String[] promptValue = {currentPrompt != null ? currentPrompt : ""};
+        category.addEntry(entryBuilder.startStrField(Text.literal("prompt（高级选项）"), promptValue[0])
+            .setDefaultValue("""
+            You are translating Minecraft RPG map content. Translate from {from} to {to} following these guidelines:
+            PRESERVE EXACTLY:
+            Color codes: §0-§9, §a-§f, §k-§o, §r
+            Placeholders: %s, %d, %player%, %location%, {0}, {1}, etc.
+            Commands: /give, /tp, /summon, etc.
+            NBT tags and data values
+            TRANSLATION STYLE:
+            Use fantasy RPG vocabulary appropriate for the target language
+            Keep quest descriptions epic and engaging
+            Make NPC dialogue natural and character-appropriate
+            Maintain consistency for recurring terms (classes, skills, items)
+            SPECIAL TERMS:
+            DO NOT translate names or proper nouns that are not clearly recognizable or translatable — keep them in English exactly as-is  
+            DO NOT ask for clarification or confirmation about unknown terms — leave them untranslated  
+            Translate generic terms (e.g., sword → 剑, potion → 药水)
+            Adapt cultural references appropriately
+            Text to translate: {text}
+            """)
+            .setTooltip(Text.literal("自定义翻译提示词。可用变量: {from}, {to}, {text}"))
+            .setSaveConsumer(s -> promptValue[0] = s)
+            .build());
+        
+        // LLM 模型配置
         category.addEntry(new NestedListListEntry<LLMManager.Model, MultiElementListEntry<LLMManager.Model>>(
-            Text.literal("AI翻译"),
+            Text.literal("OpanAI_api"),
             Lists.newArrayList(LLMManager.getModels().values()),
             true,
             Optional::empty,
-            ModMenuApiImpl::updateModels,
+            list -> {
+                updateModels(list, originalModels);
+            },
             () -> Arrays.stream(LLMManager.geBuiltInModels()).toList(),  // 默认值
             entryBuilder.getResetButtonKey(),
             true,
             true,
             (model, nestedListListEntry) -> {  // 创建子组件
                 if (model == null) {
-                    model = new LLMManager.Model("?", "?", "?", "?");
+                    model = new LLMManager.Model("?", "?", "?", "?", -1);
                 }
                 LLMManager.Model finalModel = model;
+                String originalName = model.name;
+                
                 MultiElementListEntry<LLMManager.Model> entry = new MultiElementListEntry<>(Text.literal(model.name), model,
                     Lists.newArrayList(
-                        entryBuilder.startStrField(Text.literal("Name"), model.name).setSaveConsumer(s -> finalModel.name = s).build(),
+                        entryBuilder.startStrField(Text.literal("Name"), model.name)
+                            .setSaveConsumer(s -> {
+                                finalModel.name = s;
+                                // 名称改变时需要刷新
+                                if (!originalName.equals(s)) {
+                                    needsRefresh = true;
+                                }
+                            })
+                            .build(),
                         entryBuilder.startStrField(Text.literal("Url"), model.url).setSaveConsumer(s -> finalModel.url = s).build(),
                         entryBuilder.startStrField(Text.literal("Model"), model.model).setSaveConsumer(s -> finalModel.model = s).build(),
-                        entryBuilder.startStrField(Text.literal("APIKEY"), model.apiKey).setSaveConsumer(s -> finalModel.apiKey = s).build()
+                        entryBuilder.startStrField(Text.literal("APIKEY"), model.apiKey).setSaveConsumer(s -> finalModel.apiKey = s).build(),
+                        entryBuilder.startIntField(Text.literal("QPS"), model.qps)
+                            .setMin(-1)
+                            .setMax(100000)
+                            .setDefaultValue(-1)
+                            .setTooltip(Text.literal("每秒请求数限制，-1表示无限制"))
+                            .setSaveConsumer(i -> finalModel.qps = i)
+                            .build()
                     ),
                     true);
                 return entry;
@@ -94,36 +157,105 @@ public class ModMenuApiImpl implements ModMenuApi {
 
         builder.setSavingRunnable(() -> {
             onSave.forEach(Runnable::run);
+            
+            // 保存自定义提示词
+            if (!promptValue[0].equals(LLMManager.getPrompt())) {
+                savePrompt(promptValue[0]);
+            }
+            
             TranslatorConfig.writeFile();
+            
+            // 如果需要刷新，重新打开配置屏幕
+            if (needsRefresh) {
+                needsRefresh = false;
+                if (lastParentScreen != null) {
+                    // 使用 Minecraft 的方式在下一个 tick 重新打开屏幕
+                    net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+                    client.execute(() -> client.setScreen(createScreen(lastParentScreen)));
+                }
+            }
         });
+        
         return builder.build();
     }
 
-    private static void updateModels(List<LLMManager.Model> list) {
-        Map<String, LLMManager.Model> models = new HashMap<>(LLMManager.getModels());
-        // 删除不包含的东西
-        models.forEach((name, model) -> {
-            boolean contains = false;
-            for (LLMManager.Model newModel : list) {
-                if (newModel.name.equals(name)) {
-                    contains = true;
-                    break;
+    private static void updateModels(List<LLMManager.Model> list, Map<String, LLMManager.Model> originalModels) {
+        // 找出被删除的模型
+        Set<String> currentNames = list.stream().map(m -> m.name).collect(Collectors.toSet());
+        Set<String> toRemove = new HashSet<>(originalModels.keySet());
+        toRemove.removeAll(currentNames);
+        
+        // 删除不存在的模型
+        for (String name : toRemove) {
+            LLMManager.removeModel(name);
+            needsRefresh = true;
+        }
+        
+        // 添加新模型或更新现有模型
+        for (LLMManager.Model model : list) {
+            LLMManager.Model oldModel = originalModels.get(model.name);
+            if (oldModel == null) {
+                // 新模型
+                LLMManager.addModel(model);
+                needsRefresh = true;
+            } else if (!model.name.equals(oldModel.name) || 
+                       !model.url.equals(oldModel.url) || 
+                       !model.model.equals(oldModel.model) || 
+                       !model.apiKey.equals(oldModel.apiKey) ||
+                       model.qps != oldModel.qps) {
+                // 模型有更新
+                LLMManager.addModel(model);  // addModel 会自动替换
+            }
+        }
+    
+        // 检查当前翻译器是否是 LLM 且模型是否仍存在
+        Translator current = TranslatorManager.getCurrent();
+        if (current instanceof LLMTranslator llm) {
+            String currentName = llm.getName();
+            boolean exists = list.stream().anyMatch(m -> m.name.equals(currentName));
+            if (!exists) {
+                // 当前 LLM 模型被删除，尝试切换到第一个仍存在的 LLM 翻译器
+                Optional<Translator> fallback = TranslatorManager.getTranslators().stream()
+                    .filter(t -> t instanceof LLMTranslator)
+                    .filter(t -> list.stream().anyMatch(m -> m.name.equals(t.getName())))
+                    .findFirst();
+            
+                if (fallback.isPresent()) {
+                    TranslatorManager.setTranslator(fallback.get());
+                } else {
+                    // 如果没有LLM翻译器，切换到第一个非LLM翻译器
+                    TranslatorManager.getTranslators().stream()
+                        .filter(t -> !(t instanceof LLMTranslator))
+                        .findFirst()
+                        .ifPresent(TranslatorManager::setTranslator);
                 }
             }
-            if (!contains) {
-                models.remove(name);
-            }
-        });
-        // 有就更新，没有就添加
-        for (LLMManager.Model model : list) {
-            if (models.containsKey(model.name)) {
-                LLMManager.Model old = models.get(model.name);
-                old.url = model.url;
-                old.model = model.model;
-                old.apiKey = model.apiKey;
-            } else {
-                LLMManager.addModel(model);
-            }
+        }
+    }
+    
+    /**
+     * 保存自定义提示词到文件
+     */
+    private static void savePrompt(String prompt) {
+        try {
+            // 通过反射设置 prompt 字段
+            Field promptField = LLMManager.class.getDeclaredField("prompt");
+            promptField.setAccessible(true);
+            promptField.set(null, prompt);
+            
+            // 保存到 prompt.txt 文件
+            Path configPath = net.fabricmc.loader.api.FabricLoader.getInstance()
+                .getConfigDir()
+                .resolve("translator")
+                .resolve("prompt.txt");
+            
+            // 确保目录存在
+            Files.createDirectories(configPath.getParent());
+            
+            // 写入文件
+            Files.writeString(configPath, prompt);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
