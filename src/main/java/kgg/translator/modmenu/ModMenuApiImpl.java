@@ -87,24 +87,21 @@ public class ModMenuApiImpl implements ModMenuApi {
         category.addEntry(entryBuilder.startStrField(Text.literal("prompt（高级选项）"), promptValue[0])
             .setDefaultValue("""
             You are translating Minecraft RPG map content. Translate from {from} to {to} following these guidelines:
-
             PRESERVE EXACTLY:
-            - Color codes: §0-§9, §a-§f, §k-§o, §r
-            - Placeholders: %s, %d, %player%, %location%, {0}, {1}, etc.
-            - Commands: /give, /tp, /summon, etc.
-            - NBT tags and data values
-
+            Color codes: §0-§9, §a-§f, §k-§o, §r
+            Placeholders: %s, %d, %player%, %location%, {0}, {1}, etc.
+            Commands: /give, /tp, /summon, etc.
+            NBT tags and data values
             TRANSLATION STYLE:
-            - Use fantasy RPG vocabulary appropriate for the target language
-            - Keep quest descriptions epic and engaging
-            - Make NPC dialogue natural and character-appropriate
-            - Maintain consistency for recurring terms (classes, skills, items)
-
+            Use fantasy RPG vocabulary appropriate for the target language
+            Keep quest descriptions epic and engaging
+            Make NPC dialogue natural and character-appropriate
+            Maintain consistency for recurring terms (classes, skills, items)
             SPECIAL TERMS:
-            - Keep English names for unique items/bosses if they're proper nouns
-            - Translate generic terms (sword→剑, potion→药水)
-            - Adapt cultural references appropriately
-
+            DO NOT translate names or proper nouns that are not clearly recognizable or translatable — keep them in English exactly as-is  
+            DO NOT ask for clarification or confirmation about unknown terms — leave them untranslated  
+            Translate generic terms (e.g., sword → 剑, potion → 药水)
+            Adapt cultural references appropriately
             Text to translate: {text}
             """)
             .setTooltip(Text.literal("自定义翻译提示词。可用变量: {from}, {to}, {text}"))
