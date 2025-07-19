@@ -46,13 +46,13 @@ public class LLMManager {
 
     public static Model[] geBuiltInModels() {
         return new Model[] {
-            new Model("OpenAI", "https://api.openai.com/v1/chat/completions", "", "")
+            new Model("OpenAI", "https://api.openai.com/v1/chat/completions", "", "", -1)
         };
     }
 
     public static void addModel(Model model) {
         // 去除结尾的/
-        Model newModel = new Model(model.name, model.url.endsWith("/") ? model.url.substring(0, model.url.length() - 1) : model.url, model.model, model.apiKey);
+        Model newModel = new Model(model.name, model.url.endsWith("/") ? model.url.substring(0, model.url.length() - 1) : model.url, model.model, model.apiKey, model.qps);
 
         Model old = models.put(model.name, newModel);  // 替换
         if (old != null) {
@@ -81,14 +81,21 @@ public class LLMManager {
         public String url;
         public String model;
         public String apiKey;
+        public int qps; // QPS限制，-1表示无限制
 
         public Model(String name, String url, String model, String apiKey) {
+            this(name, url, model, apiKey, -1);
+        }
+
+        public Model(String name, String url, String model, String apiKey, int qps) {
             this.name = name == null ? "" : name;
             this.url = url == null ? "" : url;
             this.model = model == null ? "" : model;
             this.apiKey = apiKey == null ? "" : apiKey;
+            this.qps = qps;
         }
     }
+    
     public static void setModels(Map<String, Model> newModels) {
         models.clear();
         models.putAll(newModels);

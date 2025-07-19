@@ -126,7 +126,7 @@ public class ModMenuApiImpl implements ModMenuApi {
             true,
             (model, nestedListListEntry) -> {  // 创建子组件
                 if (model == null) {
-                    model = new LLMManager.Model("?", "?", "?", "?");
+                    model = new LLMManager.Model("?", "?", "?", "?", -1);
                 }
                 LLMManager.Model finalModel = model;
                 String originalName = model.name;
@@ -144,7 +144,14 @@ public class ModMenuApiImpl implements ModMenuApi {
                             .build(),
                         entryBuilder.startStrField(Text.literal("Url"), model.url).setSaveConsumer(s -> finalModel.url = s).build(),
                         entryBuilder.startStrField(Text.literal("Model"), model.model).setSaveConsumer(s -> finalModel.model = s).build(),
-                        entryBuilder.startStrField(Text.literal("APIKEY"), model.apiKey).setSaveConsumer(s -> finalModel.apiKey = s).build()
+                        entryBuilder.startStrField(Text.literal("APIKEY"), model.apiKey).setSaveConsumer(s -> finalModel.apiKey = s).build(),
+                        entryBuilder.startIntField(Text.literal("QPS"), model.qps)
+                            .setMin(-1)
+                            .setMax(100000)
+                            .setDefaultValue(-1)
+                            .setTooltip(Text.literal("每秒请求数限制，-1表示无限制"))
+                            .setSaveConsumer(i -> finalModel.qps = i)
+                            .build()
                     ),
                     true);
                 return entry;
@@ -197,7 +204,8 @@ public class ModMenuApiImpl implements ModMenuApi {
             } else if (!model.name.equals(oldModel.name) || 
                        !model.url.equals(oldModel.url) || 
                        !model.model.equals(oldModel.model) || 
-                       !model.apiKey.equals(oldModel.apiKey)) {
+                       !model.apiKey.equals(oldModel.apiKey) ||
+                       model.qps != oldModel.qps) {
                 // 模型有更新
                 LLMManager.addModel(model);  // addModel 会自动替换
             }

@@ -28,7 +28,6 @@ public abstract class LLMTranslator extends Translator {
     
     private final LLMManager.Model model;
     private long lastRequestTime = 0;
-    private static final long REQUEST_INTERVAL = 500; // 限制请求频率，避免过快
 
     public LLMTranslator(LLMManager.Model model) {
         this.model = model;
@@ -45,15 +44,20 @@ public abstract class LLMTranslator extends Translator {
     @Override
     public String translate(String text, String from, String to, String source) throws IOException {
         // 限制请求频率
-        long currentTime = System.currentTimeMillis();
-        long timeSinceLastRequest = currentTime - lastRequestTime;
-        if (timeSinceLastRequest < REQUEST_INTERVAL) {
-            try {
-                TimeUnit.MILLISECONDS.sleep(REQUEST_INTERVAL - timeSinceLastRequest);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+        if (model.qps > 0) {
+            long currentTime = System.currentTimeMillis();
+            long timeSinceLastRequest = currentTime - lastRequestTime;
+            long minInterval = 1000 / model.qps; // 计算最小请求间隔（毫秒）
+            
+            if (timeSinceLastRequest < minInterval) {
+                try {
+                    TimeUnit.MILLISECONDS.sleep(minInterval - timeSinceLastRequest);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
+        // 如果 qps == -1，不进行任何频率限制
         
         try {
             // 构建提示词
